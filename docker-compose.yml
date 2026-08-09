@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tzanix-backend-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persistencia de la base de datos SQLite local
+      - ./fourier_ifa.db:/app/fourier_ifa.db
+      # Mapeo del archivo de licencia criptográfica (solo lectura)
+      - ./license.key:/app/license.key:ro
+      # Montaje del UUID de hardware del host para entornos Linux/WSL2
+      - /sys/class/dmi/id/product_uuid:/sys/class/dmi/id/product_uuid:ro
+    environment:
+      - STRIPE_SECRET_KEY=sk_test_mock_stripe_key_tzanix
+    restart: always
+
+  frontend:
+    build:
+      context: ./portal
+      dockerfile: Dockerfile
+    container_name: tzanix-frontend-portal
+    ports:
+      - "3000:3000"
+    environment:
+      # URL de comunicación del cliente web hacia la API
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: always

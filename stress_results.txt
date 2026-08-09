@@ -1,0 +1,7 @@
+success_count=150
+failure_count=0
+total_duration=4.6919
+mean_latency=238.8759
+p95_latency=394.3545
+p99_latency=456.5414
+mean_gain=39.8192

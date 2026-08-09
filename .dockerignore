@@ -1,0 +1,18 @@
+# Exclusión de archivos para la imagen de Docker del backend
+portal/node_modules
+portal/.next
+portal/out
+portal/build
+venv
+.git
+.agents
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.db
+fourier_ifa.db
+license.key
+Dockerfile
+docker-compose.yml
+nuitka-build

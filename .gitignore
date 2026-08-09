@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+fourier_ifa.db
+.env
+portal/
+tzanix_core_rs_src/

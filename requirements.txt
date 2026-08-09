@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+numpy
+requests
+websockets
+stripe
+numba
+scipy
