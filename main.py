@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Depends, Security, status, WebSocket
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 import notifications
 import licensing
@@ -56,6 +56,7 @@ class UniversalIFAResponse(BaseModel):
     status: str
     compute_efficiency_gain: float
     purified_data: List[float]
+    quarantine_data: Optional[List[float]] = None
     spatial_signature_4d: Optional[int] = None
     spatial_coordinates: Optional[List[float]] = None
     knn_neighbors: Optional[List[dict]] = None
@@ -133,8 +134,8 @@ def interleave_bits_64(n):
 
 try:
     import tzanix_core_rs
-    RUST_CORE_ENABLED = True
-    print("[NÚCLEO] Armadura Pesada (Rust Core) Detectada y Activada.")
+    RUST_CORE_ENABLED = False # Temporarily disabled for architecture rewrite
+    print("[NÚCLEO] Armadura Pesada (Rust Core) Detectada, pero ignorada forzosamente para la prueba MAD.")
 except ImportError:
     RUST_CORE_ENABLED = False
     print("[NÚCLEO] Rust Core no detectado. Operando con Python puro.")
@@ -257,33 +258,30 @@ async def broadcast_ws(response_payload: dict):
 
 class TzanixQuantumCore:
     @staticmethod
-    def process_tensor_stream(sequences: List[float]) -> List[float]:
+    def process_tensor_stream(sequences: List[float]) -> Tuple[List[float], List[float]]:
         """
-        Simula una delegación a la arquitectura de tensores cuánticos.
-        Reduce la carga del CPU local aplicando submuestreo de tensores dispersos
-        antes de atenuar el ruido, logrando un consumo energético ultra bajo.
+        Purificación Tensorial: Rechaza vectores atípicos (Veneno) usando 
+        la Mediana de Desviación Absoluta (MAD) robusta.
         """
-        if RUST_CORE_ENABLED:
-            return tzanix_core_rs.process_tensor_stream_rs(sequences)
-            
         signal_array = np.array(sequences)
-        tensor_sparse = signal_array[::2] if len(signal_array) > 10 else signal_array
+        if len(signal_array) == 0:
+            return [], []
+            
+        median = np.median(signal_array)
+        mad = np.median(np.abs(signal_array - median))
+        if mad == 0:
+            mad = 1e-6 # prevent division by zero
+            
+        # Z-Score robusto (threshold 3.0 es común)
+        z_scores = 0.6745 * (signal_array - median) / mad
         
-        fourier_transform = np.fft.fft(tensor_sparse)
-        frequencies = np.fft.fftfreq(len(tensor_sparse))
+        # Filtro: valores con z_score <= 3.0 pasan
+        mask = np.abs(z_scores) <= 3.0
         
-        filtered_fourier = fourier_transform.copy()
-        for i, freq in enumerate(frequencies):
-            if abs(freq) != 7.25:
-                filtered_fourier[i] *= 0.05
-                
-        purified_sparse = np.fft.ifft(filtered_fourier).real
-        purified_full = np.interp(
-            np.linspace(0, len(purified_sparse)-1, len(signal_array)),
-            np.arange(len(purified_sparse)),
-            purified_sparse
-        )
-        return purified_full.tolist()
+        clean_signals = signal_array[mask].tolist()
+        quarantine = signal_array[~mask].tolist()
+        
+        return clean_signals, quarantine
 
 # Lista de conexiones WebSocket de clientes web activas
 active_websockets: List[WebSocket] = []
@@ -310,7 +308,7 @@ def heavy_math_pipeline(sequences, stream_type):
     global tesseract_count, global_kdtree, last_kdtree_count
     
     # 1. Purify
-    clean_signals = TzanixQuantumCore.process_tensor_stream(sequences)
+    clean_signals, quarantine_data = TzanixQuantumCore.process_tensor_stream(sequences)
     
     # 2. Extract metrics
     clean_array = np.array(clean_signals)
@@ -353,7 +351,7 @@ def heavy_math_pipeline(sequences, stream_type):
                 "morton_code": int(tesseract_mortons[idx])
             })
             
-    return clean_signals, query_coord, morton_code, knn_neighbors_list
+    return clean_signals, quarantine_data, query_coord, morton_code, knn_neighbors_list
 
 # Endpoint Universal Protegido y Auditado
 @app.post("/api/v1/purify-stream", response_model=UniversalIFAResponse)
@@ -365,7 +363,7 @@ async def purify_data_stream(
     try:
         global tesseract_count
         # Procesamiento delegado al hilo secundario para no asfixiar el Event Loop
-        clean_signals, query_coord, morton_code, knn_neighbors_list = await asyncio.to_thread(
+        clean_signals, quarantine_data, query_coord, morton_code, knn_neighbors_list = await asyncio.to_thread(
             heavy_math_pipeline, payload.sequences, payload.stream_type
         )
         
@@ -426,6 +424,7 @@ async def purify_data_stream(
             status=f"Secuencia armonizada vía Tzanix Quantum Core bajo el plan {auth_info['plan_type']}",
             compute_efficiency_gain=efficiency_gain,
             purified_data=clean_signals,
+            quarantine_data=quarantine_data,
             spatial_signature_4d=morton_code,
             spatial_coordinates=query_coord.tolist(),
             knn_neighbors=knn_neighbors_list,
