@@ -134,8 +134,8 @@ def interleave_bits_64(n):
 
 try:
     import tzanix_core_rs
-    RUST_CORE_ENABLED = False # Temporarily disabled for architecture rewrite
-    print("[NÚCLEO] Armadura Pesada (Rust Core) Detectada, pero ignorada forzosamente para la prueba MAD.")
+    RUST_CORE_ENABLED = True
+    print("[NÚCLEO] Armadura Pesada (Rust Core) Detectada y Activada.")
 except ImportError:
     RUST_CORE_ENABLED = False
     print("[NÚCLEO] Rust Core no detectado. Operando con Python puro.")
@@ -263,6 +263,9 @@ class TzanixQuantumCore:
         Purificación Tensorial: Rechaza vectores atípicos (Veneno) usando 
         la Mediana de Desviación Absoluta (MAD) robusta.
         """
+        if RUST_CORE_ENABLED:
+            return tzanix_core_rs.process_tensor_stream_rs(sequences)
+            
         signal_array = np.array(sequences)
         if len(signal_array) == 0:
             return [], []
