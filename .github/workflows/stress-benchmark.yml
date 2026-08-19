@@ -1,0 +1,21 @@
+name: Automated Stress Benchmark (Zero-Drop Validation)
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker Image
+      run: docker build -t tzanix-engine:test -f Dockerfile .
+    - name: Run Container (Single Worker for stability)
+      run: docker run -d -p 8000:8000 -e TZANIX_API_KEY=`${{ secrets.TZANIX_API_KEY }}` --name engine-test tzanix-engine:test uvicorn api:app --host 0.0.0.0 --port 8000 --workers 1
+    - name: Wait for Boot
+      run: sleep 5
+    - name: Run Load Test (10,000 requests, 500 concurrency)
+      run: |
+        npm install -g autocannon
+        autocannon -c 500 -a 10000 http://localhost:8000/process

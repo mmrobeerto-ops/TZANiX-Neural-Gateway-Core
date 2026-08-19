@@ -1,0 +1,16 @@
+/target
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+venv/
+env/
+.env
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+

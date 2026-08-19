@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  tzanix-singularity:
+    build: .
+    container_name: tzanix-singularity-core
+    ports:
+      - "8003:8003"
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - tzanix-data:/app/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  tzanix-data:

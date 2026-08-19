@@ -1,0 +1,15 @@
+{
+  "name": "tzanix-core",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "tzanix_imu_bg.wasm",
+    "tzanix_imu.js",
+    "tzanix_imu.d.ts"
+  ],
+  "main": "tzanix_imu.js",
+  "types": "tzanix_imu.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

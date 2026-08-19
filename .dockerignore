@@ -1,0 +1,10 @@
+target/
+__pycache__/
+*.db
+*.db-shm
+*.db-wal
+.env
+.git/
+.gitignore
+web-demo/
+node_modules/
